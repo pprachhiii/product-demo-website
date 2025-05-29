@@ -1,4 +1,6 @@
 import { useState } from "react";
+import instance from "../utils/axios";
+import toast from "react-hot-toast";
 
 export default function CreateTour() {
   const [title, setTitle] = useState("");
@@ -11,6 +13,29 @@ export default function CreateTour() {
   const addStep = () => {
     setSteps([...steps, { image: "", description: "" }]);
   };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!title.trim() || steps.length === 0) {
+      return toast.error("Title and at least one step are required.");
+    }
+    try {
+      const token = localStorage.getItem("token");
+      const res = await instance.post(
+        "/api/tours",
+        { title, steps },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      toast.success("Tour saved!");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to save tour");
+    }
+  };
+
   return (
     <div className="max-w-3xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-4">Create New Tour</h1>
@@ -47,6 +72,12 @@ export default function CreateTour() {
         className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
       >
         + Add Step
+      </button>
+      <button
+        onClick={handleSubmit}
+        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mt-4"
+      >
+        Save Tour
       </button>
     </div>
   );

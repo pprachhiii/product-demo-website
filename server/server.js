@@ -1,12 +1,13 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const Authroute = require("./routes/authRoutes");
-
+const Authroute = require("./routes/authRoute");
+const tourRoute = require("./routes/toursRoute");
 require("dotenv").config();
 const app = express();
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
     origin: "http://localhost:5173",
@@ -14,6 +15,7 @@ app.use(
   })
 );
 app.use("/api/auth", Authroute);
+app.use("/api/tours", tourRoute);
 
 async function main() {
   await mongoose.connect(process.env.MONGO_URI);

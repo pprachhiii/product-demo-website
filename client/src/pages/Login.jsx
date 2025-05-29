@@ -1,8 +1,20 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import instance from "../utils/axios";
-import { Eye, EyeOff, Loader2, Lock, Mail, Boxes } from "lucide-react";
+import {
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  Loader2,
+  Lock,
+  Mail,
+  Boxes,
+} from "lucide-react";
 import toast from "react-hot-toast";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Link } from "react-router-dom";
 
 export default function Login() {
@@ -56,97 +68,104 @@ export default function Login() {
 
       {/* Right side */}
       <div className="flex flex-col justify-center items-center p-6 sm:p-12">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="flex flex-col items-center gap-2 group">
-            <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-              <Boxes className="size-6 text-primary" />
+        <Link
+          to="/"
+          className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-8 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to home
+        </Link>
+        <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm p-10">
+          <CardHeader className="text-center pb-6">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <Mail className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-2xl font-bold mt-2">Welcome Back</h1>
-            <p className="text-base-content/60">Sign in to your account</p>
-          </div>
-        </div>
+            <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
+            <p className="text-gray-600">Sign in to your account to continue</p>
+          </CardHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6 w-full max-w-md">
-          {/* Email */}
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text font-medium">Email</span>
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Mail className="size-5 text-base-content/40" />
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6 w-full max-w-md">
+              {/* Email */}
+              <div className="form-control">
+                <Label>Email</Label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Mail className="size-5 text-base-content/40" />
+                  </div>
+                  <Input
+                    type="email"
+                    placeholder="you@example.com"
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                    className="pl-10 rounded"
+                  />
+                </div>
               </div>
-              <input
-                type="email"
-                placeholder="you@example.com"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                className="input input-bordered w-full pl-10 py-3 px-4 border border-base-content/20 rounded-md focus:outline-none focus:border-base-content/40"
-              />
-            </div>
-          </div>
 
-          {/* Password */}
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text font-medium">Password</span>
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Lock className="size-5 text-base-content/40" />
+              {/* Password */}
+              <div className="form-control">
+                <Label>Password</Label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Lock className="size-5 text-base-content/40" />
+                  </div>
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={formData.password}
+                    onChange={(e) =>
+                      setFormData({ ...formData, password: e.target.value })
+                    }
+                    className="pl-10 rounded"
+                  />
+                  <Button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 py-3 px-4 flex items-center bg-white border border-l-0 hover:bg-white focus:bg-white focus:outline-none"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="size-5 text-black" />
+                    ) : (
+                      <Eye className="size-5 text-black" />
+                    )}
+                  </Button>
+                </div>
               </div>
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-                className="input input-bordered w-full pl-10 py-3 px-4 border border-base-content/20 rounded-md focus:outline-none focus:border-base-content/40"
-              />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                onClick={() => setShowPassword(!showPassword)}
+
+              {/* Submit */}
+              <Button
+                type="submit"
+                className="btn btn-primary w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700  text-white rounded p-2"
+                disabled={isLogin}
               >
-                {showPassword ? (
-                  <EyeOff className="size-5 text-base-content/40" />
+                {isLogin ? (
+                  <>
+                    <Loader2 className="size-5 animate-spin mr-2" />
+                    Loading...
+                  </>
                 ) : (
-                  <Eye className="size-5 text-base-content/40" />
+                  "Log In"
                 )}
-              </button>
+              </Button>
+            </form>
+
+            {/* Footer */}
+            <div className="text-center mt-4">
+              <p className="text-base-content/60">
+                Don’t have an account?{" "}
+                <Link
+                  to="/register"
+                  className="text-blue-600 hover:text-blue-700"
+                >
+                  Sign up
+                </Link>
+              </p>
             </div>
-          </div>
-
-          {/* Submit */}
-          <button
-            type="submit"
-            className="btn btn-primary w-full bg-black text-white rounded p-2"
-            disabled={isLogin}
-          >
-            {isLogin ? (
-              <>
-                <Loader2 className="size-5 animate-spin mr-2" />
-                Loading...
-              </>
-            ) : (
-              "Log In"
-            )}
-          </button>
-        </form>
-
-        {/* Footer */}
-        <div className="text-center mt-4">
-          <p className="text-base-content/60">
-            Don’t have an account?{" "}
-            <Link to="/signup" className="link link-primary">
-              Sign up
-            </Link>
-          </p>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -1,9 +1,22 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import instance from "../utils/axios";
-import { Eye, EyeOff, Loader2, Lock, Mail, Boxes, User } from "lucide-react";
+import {
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  Loader2,
+  Lock,
+  Mail,
+  Boxes,
+  User,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
@@ -58,117 +71,121 @@ export default function Signup() {
 
       {/* right side */}
       <div className="flex flex-col justify-center items-center p-6 sm:p-12">
+        <Link
+          to="/"
+          className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-8 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to home
+        </Link>
         {/* LOGO */}
-        <div className="text-center mb-8">
-          <div className="flex flex-col items-center gap-2 group">
-            <div
-              className="size-12 rounded-xl bg-primary/10 flex items-center justify-center 
-            group-hover:bg-primary/20 transition-colors"
-            >
-              <Boxes className="size-6 text-primary" />
+        <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm p-10">
+          <CardHeader className="text-center pb-6">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <User className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-2xl font-bold mt-2">Create Account</h1>
-            <p className="text-base-content/60">
-              Get started with your free account
+            <CardTitle className="text-2xl font-bold">
+              Create your account
+            </CardTitle>
+            <p className="text-gray-600">
+              Start creating amazing product demos today
             </p>
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6 w-full max-w-md">
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text font-medium">Full Name</span>
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <User className="size-5 text-base-content/40" />
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6 w-full max-w-md">
+              <div className="form-control">
+                <Label>Full Name</Label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <User className="size-5 text-base-content/40" />
+                  </div>
+                  <Input
+                    type="text"
+                    placeholder="Enter Your Name"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    className="pl-10 rounded"
+                  />
+                </div>
               </div>
-              <input
-                type="text"
-                placeholder="Enter Your Name"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                className="input input-bordered w-full pl-10 py-3 px-4 border border-base-content/20 rounded-md"
-              />
-            </div>
-          </div>
 
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text font-medium">Email</span>
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Mail className="size-5 text-base-content/40" />
+              <div className="form-control">
+                <Label>Email</Label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Mail className="size-5 text-base-content/40" />
+                  </div>
+                  <Input
+                    type="email"
+                    className="pl-10 rounded"
+                    placeholder="you@example.com"
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                  />
+                </div>
               </div>
-              <input
-                type="email"
-                className="input input-bordered w-full pl-10 py-2 px-20 border border-base-content/20 rounded-md"
-                placeholder="you@example.com"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-              />
-            </div>
-          </div>
 
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text font-medium">Password</span>
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Lock className="size-5 text-base-content/40" />
+              <div className="form-control">
+                <Label>Password</Label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Lock className="size-5 text-base-content/40" />
+                  </div>
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    className="pl-10 rounded"
+                    placeholder="••••••••"
+                    value={formData.password}
+                    onChange={(e) =>
+                      setFormData({ ...formData, password: e.target.value })
+                    }
+                  />
+                  <Button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 py-3 px-4 flex items-center bg-white border border-l-0 hover:bg-white focus:bg-white focus:outline-none"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="size-5 text-black" />
+                    ) : (
+                      <Eye className="size-5 text-black" />
+                    )}
+                  </Button>
+                </div>
               </div>
-              <input
-                type={showPassword ? "text" : "password"}
-                className="input input-bordered w-full pl-10 py-2 px-20 border border-base-content/20 rounded-md"
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-              />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-0 pr-3 py-2 px-20 flex items-center"
-                onClick={() => setShowPassword(!showPassword)}
+
+              <Button
+                type="submit"
+                className="btn btn-primary w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700  text-white rounded p-2"
+                disabled={isSigningUp}
               >
-                {showPassword ? (
-                  <EyeOff className="size-5 text-base-content/40" />
+                {isSigningUp ? (
+                  <>
+                    <Loader2 className="size-5 animate-spin" /> Loading...
+                  </>
                 ) : (
-                  <Eye className="size-5 text-base-content/40" />
+                  "Sign Up"
                 )}
-              </button>
+              </Button>
+            </form>
+
+            <div className="text-center mt-4">
+              <p className="text-base-content/60">
+                Already have an account?{" "}
+                <Link
+                  to="/login"
+                  className="text-blue-600 hover:text-blue-700 "
+                >
+                  Sign in
+                </Link>
+              </p>
             </div>
-          </div>
-
-          <button
-            type="submit"
-            className="btn btn-primary w-full bg-black text-white rounded p-2"
-            disabled={isSigningUp}
-          >
-            {isSigningUp ? (
-              <>
-                <Loader2 className="size-5 animate-spin" /> Loading...
-              </>
-            ) : (
-              "Sign Up"
-            )}
-          </button>
-        </form>
-
-        <div className="text-center mt-4">
-          <p className="text-base-content/60">
-            Already have an account?{" "}
-            <Link to="/login" className="link link-primary">
-              Sign in
-            </Link>
-          </p>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
