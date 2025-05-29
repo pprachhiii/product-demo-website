@@ -6,4 +6,4 @@ const { register, login } = require("../controllers/authController.js");
 router.post("/register", register);
 router.post("/login", login);
 
-modules.exports = router;
+module.exports = router;
