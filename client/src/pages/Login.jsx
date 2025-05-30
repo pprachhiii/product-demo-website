@@ -1,15 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import instance from "../utils/axios";
-import {
-  ArrowLeft,
-  Eye,
-  EyeOff,
-  Loader2,
-  Lock,
-  Mail,
-  Boxes,
-} from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,15 +46,16 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2">
+    <div className="min-h-screen grid lg:grid-cols-2 bg-gradient-to-br from-blue-50 via-white to-purple-50 ">
       {/* Left side */}
-      <div className="hidden lg:flex flex-col justify-center items-center bg-gray-100 p-12">
-        <h2 className="text-3xl font-bold text-gray-800 mb-4">
-          Experience the Demo
+      <div className="hidden lg:flex flex-col justify-center items-center p-5">
+        <h2 className="text-6xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-6 animate-fade-in ">
+          Build. Share. Convert.
         </h2>
-        <p className="text-lg text-gray-600 max-w-md text-center">
-          See how our product works and discover features that make your
-          workflow faster and smarter.
+        <p className="text-lg text-gray-600 max-w-md text-center animate-fade-in">
+          Create stunning interactive product tours that engage your audience
+          and drive conversions. Record, edit, and share your demos with the
+          world.
         </p>
       </div>
 
