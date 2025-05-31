@@ -1,18 +1,14 @@
 const mongoose = require("mongoose");
-const { Schema } = mongoose;
 
-const stepSchema = new Schema({
-  image: String,
+const TourSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  title: String,
   description: String,
+  thumbnail: String,
+  views: { type: Number, default: 0 },
+  status: { type: String, enum: ["published", "draft"], default: "draft" },
+  isPublic: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now },
 });
 
-const tourSchema = new Schema(
-  {
-    title: { type: String, required: true },
-    steps: [stepSchema],
-    owner: { type: Schema.Types.ObjectId, ref: "User", required: true },
-  },
-  { timestamps: true }
-);
-
-module.exports = mongoose.model("Tour", tourSchema);
+module.exports = mongoose.model("Tour", TourSchema);

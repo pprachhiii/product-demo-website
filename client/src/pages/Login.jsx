@@ -49,7 +49,7 @@ export default function Login() {
     <div className="min-h-screen grid lg:grid-cols-2 bg-gradient-to-br from-blue-50 via-white to-purple-50 ">
       {/* Left side */}
       <div className="hidden lg:flex flex-col justify-center items-center p-5">
-        <h2 className="text-6xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-6 animate-fade-in ">
+        <h2 className="text-6xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-6 animate-fade-in mb-4">
           Build. Share. Convert.
         </h2>
         <p className="text-lg text-gray-600 max-w-md text-center animate-fade-in">

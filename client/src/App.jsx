@@ -3,8 +3,10 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ProtectedRoute from "./utils/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
-import CreateTour from "./pages/CreateTour";
 import Index from "./pages/Index";
+import TourEditor from "./pages/TourEditor";
+import TourPreview from "./pages/TourPreview";
+import NotFound from "./pages/NotFound";
 
 function App() {
   return (
@@ -21,14 +23,29 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* Route to create a new tour */}
         <Route
-          path="/create"
+          path="/editor"
           element={
             <ProtectedRoute>
-              <CreateTour />
+              <TourEditor isNew={true} />
             </ProtectedRoute>
           }
         />
+
+        {/* Route to edit an existing tour by ID */}
+        <Route
+          path="/editor/:id"
+          element={
+            <ProtectedRoute>
+              <TourEditor />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route path="/tour/:id" element={<TourPreview />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   );

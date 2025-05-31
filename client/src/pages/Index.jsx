@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import Navigation from "@/components/Navbar";
+import instance from "../utils/axios.js";
 
 const Index = () => {
   const [demo, setDemo] = useState(null);
@@ -21,19 +22,21 @@ const Index = () => {
 
   const getStartRoute = () => (isAuthenticated ? "/editor" : "/register");
 
-  useEffect(() => {
-    const fetchDemo = async () => {
-      try {
-        const res = await fetch("/api/tour/demo");
-        const data = await res.json();
-        setDemo(data);
-      } catch (err) {
-        console.error("Failed to fetch demo:", err);
-      }
-    };
+  // useEffect(() => {
+  //   const fetchDemo = async () => {
+  //     try {
+  //       const res = await instance.get("/api/tours/demo");
+  //       setDemo(res.data);
+  //     } catch (err) {
+  //       console.error(
+  //         "Failed to fetch demo:",
+  //         err.response?.data?.message || err.message
+  //       );
+  //     }
+  //   };
 
-    fetchDemo();
-  }, []);
+  //   fetchDemo();
+  // }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -68,7 +71,7 @@ const Index = () => {
               </Button>
             </Link>
 
-            <Link to="/tour/demo">
+            <Link to="/tours/demo">
               <Button
                 variant="outline"
                 size="lg"
