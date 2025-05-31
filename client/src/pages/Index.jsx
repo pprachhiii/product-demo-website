@@ -10,33 +10,109 @@ import {
   Zap,
   Users,
   Globe,
+  X,
+  ArrowLeft,
+  Pause,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import Navigation from "@/components/Navbar";
 import instance from "../utils/axios.js";
 
+const demoFallbackData = {
+  title: "Demo Tour (This is just demo data)",
+  author: "Demo Author",
+  steps: [
+    {
+      title: "Welcome Step",
+      description: "This is the first step of the demo tour.",
+      duration: 3000,
+      image: null,
+    },
+    {
+      title: "Second Step",
+      description: "Here is some more info in the demo.",
+      duration: 3000,
+      image: null,
+    },
+  ],
+};
+
+const getStepGradient = (step) => {
+  const gradients = [
+    "from-blue-600 to-purple-600",
+    "from-purple-600 to-pink-600",
+    "from-pink-600 to-red-600",
+  ];
+  return gradients[step % gradients.length];
+};
+
 const Index = () => {
   const [demo, setDemo] = useState(null);
+  const [showDemoModal, setShowDemoModal] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+
   const token = localStorage.getItem("token");
   const isAuthenticated = !!token;
 
-  const getStartRoute = () => (isAuthenticated ? "/editor" : "/register");
-
+  // Demo steps load effect — uncomment to fetch from API if available
   // useEffect(() => {
   //   const fetchDemo = async () => {
   //     try {
   //       const res = await instance.get("/api/tours/demo");
-  //       setDemo(res.data);
+  //       let tourData = res.data;
+  //       // fallback steps
+  //       if (!tourData.steps || tourData.steps.length === 0) {
+  //         tourData.steps = demoFallbackData.steps;
+  //       }
+  //       setDemo(tourData);
   //     } catch (err) {
-  //       console.error(
-  //         "Failed to fetch demo:",
-  //         err.response?.data?.message || err.message
-  //       );
+  //       console.error("Failed to fetch demo:", err);
+  //       setDemo(demoFallbackData);
   //     }
   //   };
-
   //   fetchDemo();
   // }, []);
+
+  // For demo purpose, directly set fallback data here:
+  useEffect(() => {
+    setDemo(demoFallbackData);
+  }, []);
+
+  // Autoplay effect for demo tour steps
+  useEffect(() => {
+    if (!isPlaying) return;
+
+    if (currentStep >= demo?.steps.length - 1) {
+      setIsPlaying(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setCurrentStep((prev) => Math.min(prev + 1, demo.steps.length - 1));
+    }, demo.steps[currentStep].duration || 3000);
+
+    return () => clearTimeout(timer);
+  }, [isPlaying, currentStep, demo]);
+
+  const prevStep = () => {
+    setCurrentStep((prev) => Math.max(prev - 1, 0));
+  };
+
+  const nextStep = () => {
+    setCurrentStep((prev) => Math.min(prev + 1, demo.steps.length - 1));
+  };
+
+  const toggleAutoplay = () => {
+    setIsPlaying((prev) => !prev);
+  };
+
+  const getStartRoute = () => (isAuthenticated ? "/editor" : "/register");
+
+  // If no demo loaded, don't render modal content
+  if (!demo) return null;
+
+  const currentStepData = demo.steps[currentStep];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -45,7 +121,7 @@ const Index = () => {
       {/* Hero Section */}
       <section className="pt-32 pb-20 px-4">
         <div className="max-w-6xl mx-auto text-center">
-          <div className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-medium mb-8 animate-fade-in">
+          <div className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-medium mb-8 animate-fade-in cursor-pointer select-none">
             <Zap className="w-4 h-4 mr-2" />
             Create Interactive Product Demos
           </div>
@@ -71,19 +147,30 @@ const Index = () => {
               </Button>
             </Link>
 
-            <Link to="/tours/demo">
-              <Button
-                variant="outline"
-                size="lg"
-                className="px-8 py-4 text-lg rounded-full hover:bg-white hover:shadow-lg transition-all duration-300"
-              >
-                <Play className="mr-2 w-5 h-5" />
-                Watch Demo
-              </Button>
-            </Link>
+            {/* Watch Demo button - opens modal */}
+            <Button
+              variant="outline"
+              size="lg"
+              className="px-8 py-4 text-lg rounded-full hover:bg-white hover:shadow-lg transition-all duration-300 flex items-center justify-center"
+              onClick={() => {
+                setShowDemoModal(true);
+                setCurrentStep(0);
+                setIsPlaying(false);
+              }}
+            >
+              <Play className="mr-2 w-5 h-5" />
+              Watch Demo
+            </Button>
           </div>
 
-          <div className="relative max-w-4xl mx-auto animate-fade-in">
+          <div
+            className="relative max-w-4xl mx-auto animate-fade-in cursor-pointer"
+            onClick={() => {
+              setShowDemoModal(true);
+              setCurrentStep(0);
+              setIsPlaying(false);
+            }}
+          >
             <div className="bg-white rounded-2xl shadow-2xl p-8 border">
               <div className="bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl h-96 flex items-center justify-center">
                 <div className="text-center">
@@ -186,7 +273,15 @@ const Index = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-8 shadow-xl">
+          {/* Demo preview area clickable */}
+          <div
+            className="bg-white rounded-2xl p-8 shadow-xl cursor-pointer"
+            onClick={() => {
+              setShowDemoModal(true);
+              setCurrentStep(0);
+              setIsPlaying(false);
+            }}
+          >
             <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl h-80 flex items-center justify-center">
               <div className="text-center">
                 <div className="bg-white rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-lg">
@@ -249,6 +344,103 @@ const Index = () => {
           </p>
         </div>
       </footer>
+
+      {/* Demo Preview Modal */}
+      {showDemoModal && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowDemoModal(false)}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-3xl w-full p-8 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowDemoModal(false)}
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-200 transition"
+              aria-label="Close demo preview"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            <h2 className="text-2xl font-bold mb-4 text-center">
+              {demo.title}{" "}
+              <span className="text-sm text-gray-400 ml-2">
+                (This is just demo data)
+              </span>
+            </h2>
+            <p className="text-center text-gray-600 mb-8">By {demo.author}</p>
+
+            {/* Step progress bar */}
+            <div className="flex items-center mb-6 space-x-2">
+              {demo.steps.map((_, idx) => (
+                <div
+                  key={idx}
+                  className={`flex-1 h-2 rounded-full cursor-pointer transition-colors ${
+                    idx === currentStep
+                      ? `bg-gradient-to-r ${getStepGradient(idx)}`
+                      : "bg-gray-300"
+                  }`}
+                  onClick={() => {
+                    setCurrentStep(idx);
+                    setIsPlaying(false);
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Step Content */}
+            <div className="text-center">
+              <h3 className="text-xl font-semibold mb-2">
+                {currentStepData.title}
+              </h3>
+              <p className="text-gray-700 mb-4">
+                {currentStepData.description}
+              </p>
+              {currentStepData.image && (
+                <img
+                  src={currentStepData.image}
+                  alt={currentStepData.title}
+                  className="mx-auto rounded-lg max-h-48"
+                />
+              )}
+            </div>
+
+            {/* Controls */}
+            <div className="flex justify-center items-center gap-6 mt-6">
+              <button
+                onClick={prevStep}
+                disabled={currentStep === 0}
+                className="p-3 rounded-full bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+                aria-label="Previous step"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+
+              <button
+                onClick={toggleAutoplay}
+                className="p-3 rounded-full bg-blue-600 text-white hover:bg-blue-700"
+                aria-label={isPlaying ? "Pause tour" : "Play tour"}
+              >
+                {isPlaying ? (
+                  <Pause className="w-5 h-5" />
+                ) : (
+                  <Play className="w-5 h-5" />
+                )}
+              </button>
+
+              <button
+                onClick={nextStep}
+                disabled={currentStep === demo.steps.length - 1}
+                className="p-3 rounded-full bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+                aria-label="Next step"
+              >
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

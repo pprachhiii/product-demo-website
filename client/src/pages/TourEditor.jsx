@@ -7,19 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/Navbar";
-import {
-  Save,
-  Play,
-  Plus,
-  X,
-  Upload,
-  Video,
-  Eye,
-  Type,
-  Circle,
-  Square,
-  ArrowRight,
-} from "lucide-react";
+import { Save, Play, Plus, X, Upload, Video, Eye } from "lucide-react";
 import instance from "../utils/axios";
 
 const TourEditor = ({ isNew }) => {
@@ -37,7 +25,7 @@ const TourEditor = ({ isNew }) => {
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const [chunks, setChunks] = useState([]);
   const fileInputRef = useRef(null);
-  const [tourDescription, setTourDescription] = useState(""); // Added to match your right sidebar
+  const [tourDescription, setTourDescription] = useState("");
 
   useEffect(() => {
     if (isNew) {
@@ -68,8 +56,19 @@ const TourEditor = ({ isNew }) => {
 
         let stepData = tourData.steps || [];
         if (stepData.length === 0) {
-          const { data } = await instance.get(`/editor/${tourId}`);
-          stepData = data;
+          if (stepData.length === 0) {
+            stepData = [
+              {
+                id: Date.now().toString(),
+                title: "Welcome Step",
+                description: "Introduce users to your product",
+                image: null,
+                annotations: [],
+              },
+            ];
+          }
+
+          // stepData = data;
         }
 
         const normalizedSteps = stepData.map((step) => ({
@@ -79,7 +78,7 @@ const TourEditor = ({ isNew }) => {
 
         setTitle(tourData.title);
         setDescription(tourData.description);
-        setTourDescription(tourData.description || ""); // sync with tourDescription state
+        setTourDescription(tourData.description || "");
         setSteps(normalizedSteps);
         setSelectedStep(normalizedSteps[0]?.id || null);
       } catch (error) {
@@ -102,6 +101,12 @@ const TourEditor = ({ isNew }) => {
 
     fetchTour();
   }, [tourId, isNew]);
+
+  const updateStep = (id, changes) => {
+    setSteps((prev) =>
+      prev.map((step) => (step.id === id ? { ...step, ...changes } : step))
+    );
+  };
 
   const addStep = () => {
     const newStep = {
@@ -128,19 +133,22 @@ const TourEditor = ({ isNew }) => {
 
   const saveTour = async () => {
     try {
+      const cleanedSteps = steps.map((step) => ({ ...step }));
+
       if (isNew) {
         const response = await instance.post(`/tours`, {
           title,
           description: tourDescription,
-          steps,
+          steps: cleanedSteps,
         });
         alert("Tour created successfully!");
-        navigate(`/editor/${response.data.id || response.data._id}`);
+        const newId = response.data.id || response.data._id;
+        navigate(`/editor/${newId}`);
       } else {
         await instance.put(`/tours/${tourId}`, {
           title,
           description: tourDescription,
-          steps,
+          steps: cleanedSteps,
         });
         alert("Tour saved successfully!");
       }
@@ -154,11 +162,7 @@ const TourEditor = ({ isNew }) => {
     const file = event.target.files?.[0];
     if (file) {
       const url = URL.createObjectURL(file);
-      setSteps(
-        steps.map((step) =>
-          step.id === selectedStep ? { ...step, image: url } : step
-        )
-      );
+      updateStep(selectedStep, { image: url });
     }
   };
 
@@ -176,11 +180,7 @@ const TourEditor = ({ isNew }) => {
       recorder.onstop = () => {
         const blob = new Blob(chunks, { type: "video/webm" });
         const url = URL.createObjectURL(blob);
-        setSteps(
-          steps.map((step) =>
-            step.id === selectedStep ? { ...step, image: url } : step
-          )
-        );
+        updateStep(selectedStep, { image: url });
         setChunks([]);
       };
 
@@ -223,7 +223,17 @@ const TourEditor = ({ isNew }) => {
               <Badge variant="secondary">{isNew ? "Draft" : "Editing"}</Badge>
             </div>
             <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (tourId) {
+                    navigate(`/preview/${tourId}`);
+                  } else {
+                    alert("Please save the tour before previewing");
+                  }
+                }}
+              >
                 <Eye className="w-4 h-4 mr-2" />
                 Preview
               </Button>
@@ -338,7 +348,20 @@ const TourEditor = ({ isNew }) => {
                       {currentStep?.title}
                     </span>
                     <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        ref={fileInputRef}
+                        onChange={handleImageUpload}
+                        style={{ display: "none" }}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          fileInputRef.current && fileInputRef.current.click()
+                        }
+                      >
                         <Upload className="w-4 h-4 mr-2" />
                         Upload Image
                       </Button>
@@ -348,11 +371,19 @@ const TourEditor = ({ isNew }) => {
                 <CardContent className="flex-1">
                   <div className="h-96 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center relative">
                     {currentStep?.image ? (
-                      <img
-                        src={currentStep.image}
-                        alt="Step content"
-                        className="max-h-full max-w-full object-contain rounded-lg"
-                      />
+                      currentStep.image.endsWith(".webm") ? (
+                        <video
+                          src={currentStep.image}
+                          controls
+                          className="max-h-full max-w-full object-contain rounded-lg"
+                        />
+                      ) : (
+                        <img
+                          src={currentStep.image}
+                          alt="Step content"
+                          className="max-h-full max-w-full object-contain rounded-lg"
+                        />
+                      )
                     ) : (
                       <div className="text-center">
                         <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -380,15 +411,9 @@ const TourEditor = ({ isNew }) => {
                 <Input
                   id="step-title"
                   value={currentStep?.title || ""}
-                  onChange={(e) => {
-                    setSteps(
-                      steps.map((step) =>
-                        step.id === selectedStep
-                          ? { ...step, title: e.target.value }
-                          : step
-                      )
-                    );
-                  }}
+                  onChange={(e) =>
+                    updateStep(selectedStep, { title: e.target.value })
+                  }
                   placeholder="Enter step title"
                 />
               </div>
@@ -398,15 +423,9 @@ const TourEditor = ({ isNew }) => {
                 <Textarea
                   id="step-description"
                   value={currentStep?.description || ""}
-                  onChange={(e) => {
-                    setSteps(
-                      steps.map((step) =>
-                        step.id === selectedStep
-                          ? { ...step, description: e.target.value }
-                          : step
-                      )
-                    );
-                  }}
+                  onChange={(e) =>
+                    updateStep(selectedStep, { description: e.target.value })
+                  }
                   placeholder="Describe what happens in this step"
                   rows={3}
                 />
