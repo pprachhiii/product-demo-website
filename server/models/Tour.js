@@ -9,6 +9,16 @@ const TourSchema = new mongoose.Schema({
   status: { type: String, enum: ["published", "draft"], default: "draft" },
   isPublic: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
+  steps: [
+    {
+      id: { type: mongoose.Schema.Types.ObjectId, auto: true },
+      title: String,
+      description: String,
+      image: String,
+      annotations: { type: Array, default: [] },
+      order: Number,
+      duration: { type: Number, default: 3000 },
+    },
+  ],
 });
-
 module.exports = mongoose.model("Tour", TourSchema);

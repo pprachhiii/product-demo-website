@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, Play, Pause, Share, X } from "lucide-react";
 import instance from "../utils/axios.js";
+import confetti from "canvas-confetti";
 
 const TourPreview = () => {
   const { id } = useParams();
@@ -19,28 +20,12 @@ const TourPreview = () => {
     try {
       setLoading(true);
       setError(null);
-
-      const res = await instance.get(`/tours/${id}`);
-      let tourData = res.data;
-
-      // Add dummy demo steps if no steps exist
+      const res = await instance.get(`/tour/${id}`);
+      const tourData = res.data;
       if (!tourData.steps || tourData.steps.length === 0) {
-        tourData.steps = [
-          {
-            title: "Welcome Step (Demo)",
-            description: "This is the first demo step of the tour.",
-            duration: 3000,
-            image: null,
-          },
-          {
-            title: "Second Step (Demo)",
-            description: "Here is some more demo info.",
-            duration: 3000,
-            image: null,
-          },
-        ];
+        setTour({ ...tourData, steps: [] });
+        return;
       }
-
       setTour(tourData);
       setCurrentStep(0);
       setIsPlaying(false);
@@ -57,12 +42,10 @@ const TourPreview = () => {
     fetchTour();
   }, [fetchTour]);
 
-  // Auto-play logic for tour steps
   useEffect(() => {
     if (!isPlaying || !tour || !tour.steps || !tour.steps[currentStep]) return;
 
     const duration = tour.steps[currentStep].duration ?? 3000;
-
     if (currentStep >= tour.steps.length - 1) {
       setIsPlaying(false);
       return;
@@ -75,7 +58,6 @@ const TourPreview = () => {
     return () => clearTimeout(timer);
   }, [isPlaying, currentStep, tour]);
 
-  // Keyboard controls
   useEffect(() => {
     const handleKey = (e) => {
       if (!tour || !tour.steps) return;
@@ -113,7 +95,9 @@ const TourPreview = () => {
 
   if (!tour.steps || tour.steps.length === 0)
     return (
-      <div className="p-6 text-center">No steps available in this tour.</div>
+      <div className="p-6 text-center text-white">
+        No steps have been added, so this tour has no content to preview.
+      </div>
     );
 
   const currentStepData = tour.steps[currentStep];
@@ -124,6 +108,14 @@ const TourPreview = () => {
   };
 
   const nextStep = () => {
+    if (currentStep === tour.steps.length - 1) {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+      });
+      return;
+    }
     setCurrentStep((step) => Math.min(step + 1, tour.steps.length - 1));
     setIsPlaying(false);
   };
@@ -132,7 +124,6 @@ const TourPreview = () => {
     setIsPlaying((playing) => !playing);
   };
 
-  // This function is to keep the gradient as your original UI had for the step image background
   const getStepGradient = (stepIndex) => {
     const gradients = [
       "from-indigo-900 via-purple-900 to-pink-900",
@@ -145,10 +136,8 @@ const TourPreview = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white relative overflow-hidden">
-      {/* Background Pattern */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(17,24,39,0.8),rgba(0,0,0,1))]"></div>
 
-      {/* Header */}
       <div className="relative z-10 flex items-center justify-between p-6">
         <div className="flex items-center gap-4">
           <Link to="/dashboard">
@@ -190,31 +179,46 @@ const TourPreview = () => {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="relative z-10 flex-1 flex items-center justify-center px-6 pb-6">
         <div className="max-w-4xl w-full">
           <Card className="bg-white/5 backdrop-blur-lg border-white/10 shadow-2xl">
             <CardContent className="p-0">
-              {/* Step Image with gradient background */}
               <div
                 className={`h-96 bg-gradient-to-br ${getStepGradient(
                   currentStep
                 )} relative rounded-t-lg overflow-hidden`}
               >
-                <div className="absolute inset-0 bg-black/20"></div>
+                {currentStepData.image?.endsWith(".webm") ? (
+                  <video
+                    src={currentStepData.image}
+                    autoPlay
+                    muted
+                    loop
+                    className="absolute inset-0 w-full h-full object-cover z-0"
+                  />
+                ) : currentStepData.image ? (
+                  <img
+                    src={currentStepData.image}
+                    alt={currentStepData.title}
+                    className="absolute inset-0 w-full h-full object-cover z-0"
+                  />
+                ) : (
+                  <p className="text-lg opacity-80 z-10 relative text-center pt-40">
+                    No media available
+                  </p>
+                )}
 
-                {/* Overlay with step number and "Step Content Area" */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-white z-10 pointer-events-none">
+                <div className="absolute inset-0 bg-black/30 z-10"></div>
+
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-white z-20 pointer-events-none">
                   <div className="bg-white/20 backdrop-blur-sm rounded-full w-20 h-20 flex items-center justify-center mb-4">
                     <span className="text-2xl font-bold">
                       {currentStep + 1}
                     </span>
                   </div>
-                  <p className="text-lg opacity-80">Step Content Area</p>
                 </div>
 
-                {/* Step Progress Bar */}
-                <div className="absolute bottom-4 left-4 right-4">
+                <div className="absolute bottom-4 left-4 right-4 z-20">
                   <div className="bg-black/20 backdrop-blur-sm rounded-full h-2 overflow-hidden">
                     <div
                       className="bg-white h-full transition-all duration-300 ease-linear"
@@ -228,7 +232,6 @@ const TourPreview = () => {
                 </div>
               </div>
 
-              {/* Step Content */}
               <div className="p-8">
                 <h2 className="text-2xl font-bold text-white mb-4">
                   {currentStepData.title}
@@ -237,7 +240,6 @@ const TourPreview = () => {
                   {currentStepData.description}
                 </p>
 
-                {/* Controls */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Button
@@ -266,8 +268,7 @@ const TourPreview = () => {
 
                   <Button
                     onClick={nextStep}
-                    disabled={currentStep === tour.steps.length - 1}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:hover:from-blue-600 disabled:hover:to-purple-600"
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-50"
                   >
                     {currentStep === tour.steps.length - 1
                       ? "Complete"
@@ -281,7 +282,6 @@ const TourPreview = () => {
         </div>
       </div>
 
-      {/* Step Indicators */}
       <div className="relative z-10 flex justify-center pb-6">
         <div className="flex gap-3">
           {tour.steps.map((_, index) => (
@@ -303,7 +303,6 @@ const TourPreview = () => {
         </div>
       </div>
 
-      {/* Share Modal */}
       {showShare && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <Card className="w-full max-w-md mx-4 bg-white text-gray-900">
@@ -333,11 +332,11 @@ const TourPreview = () => {
                     />
                     <Button
                       size="sm"
-                      onClick={() => {
+                      onClick={() =>
                         navigator.clipboard.writeText(
                           `${window.location.origin}/tour/${id}`
-                        );
-                      }}
+                        )
+                      }
                     >
                       Copy
                     </Button>
@@ -349,13 +348,52 @@ const TourPreview = () => {
                     Share on social media
                   </p>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() =>
+                        window.open(
+                          `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+                            "Check out this interactive tour!"
+                          )}&url=${encodeURIComponent(
+                            `${window.location.origin}/tour/${id}`
+                          )}`,
+                          "_blank"
+                        )
+                      }
+                    >
                       Twitter
                     </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() =>
+                        window.open(
+                          `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
+                            `${window.location.origin}/tour/${id}`
+                          )}`,
+                          "_blank"
+                        )
+                      }
+                    >
                       LinkedIn
                     </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() =>
+                        window.open(
+                          `mailto:?subject=Check out this tour&body=${encodeURIComponent(
+                            `Here's a tour you might like: ${window.location.origin}/tour/${id}`
+                          )}`
+                        )
+                      }
+                    >
                       Email
                     </Button>
                   </div>

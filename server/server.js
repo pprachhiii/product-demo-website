@@ -2,17 +2,25 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
+const fs = require("fs");
 
 const authRoutes = require("./routes/authRoutes");
 const tourRoutes = require("./routes/tourRoutes");
-const tourStepRoutes = require("./routes/tourStepRoutes");
-
 require("dotenv").config();
 
 const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Ensure uploads folder exists
+const uploadsDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir);
+}
+
+// Serve uploads folder statically
+app.use("/uploads", express.static(uploadsDir));
 
 app.use(
   cors({
@@ -21,12 +29,11 @@ app.use(
   })
 );
 
-// Register API routes with clear prefixes
+// Register API routes
 app.use("/api/auth", authRoutes);
 app.use("/api/tours", tourRoutes);
-app.use("/api/editor", tourStepRoutes);
 
-// Serve React frontend (production build) - adjust path if needed
+// Serve React frontend build (adjust if needed)
 app.use(express.static(path.join(__dirname, "client/build")));
 
 // Global error handler

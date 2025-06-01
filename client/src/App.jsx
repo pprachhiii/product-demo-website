@@ -39,7 +39,7 @@ function App() {
           path="/editor/:id"
           element={
             <ProtectedRoute>
-              <TourEditor />
+              <TourEditor isNew={false} />
             </ProtectedRoute>
           }
         />

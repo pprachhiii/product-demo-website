@@ -10,22 +10,21 @@ import Navigation from "@/components/Navbar";
 import { Save, Play, Plus, X, Upload, Video, Eye } from "lucide-react";
 import instance from "../utils/axios";
 
-const TourEditor = ({ isNew }) => {
+const TourEditor = () => {
   const { id } = useParams();
+  const isNew = !id;
   const navigate = useNavigate();
-
   const tourId = id || null;
 
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  const [tourDescription, setTourDescription] = useState("");
   const [steps, setSteps] = useState([]);
   const [selectedStep, setSelectedStep] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
-  const [chunks, setChunks] = useState([]);
+  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
-  const [tourDescription, setTourDescription] = useState("");
 
   useEffect(() => {
     if (isNew) {
@@ -34,10 +33,9 @@ const TourEditor = ({ isNew }) => {
         title: "Welcome Step",
         description: "Introduce users to your product",
         image: null,
-        annotations: [],
       };
       setTitle("");
-      setDescription("");
+      setTourDescription("");
       setSteps([fallbackStep]);
       setSelectedStep(fallbackStep.id);
       setLoading(false);
@@ -56,19 +54,14 @@ const TourEditor = ({ isNew }) => {
 
         let stepData = tourData.steps || [];
         if (stepData.length === 0) {
-          if (stepData.length === 0) {
-            stepData = [
-              {
-                id: Date.now().toString(),
-                title: "Welcome Step",
-                description: "Introduce users to your product",
-                image: null,
-                annotations: [],
-              },
-            ];
-          }
-
-          // stepData = data;
+          stepData = [
+            {
+              _id: Date.now().toString(),
+              title: "Welcome Step",
+              description: "Introduce users to your product",
+              image: null,
+            },
+          ];
         }
 
         const normalizedSteps = stepData.map((step) => ({
@@ -76,8 +69,7 @@ const TourEditor = ({ isNew }) => {
           ...step,
         }));
 
-        setTitle(tourData.title);
-        setDescription(tourData.description);
+        setTitle(tourData.title || "");
         setTourDescription(tourData.description || "");
         setSteps(normalizedSteps);
         setSelectedStep(normalizedSteps[0]?.id || null);
@@ -88,10 +80,9 @@ const TourEditor = ({ isNew }) => {
           title: "Welcome Step",
           description: "Introduce users to your product",
           image: null,
-          annotations: [],
         };
         setTitle("New Product Demo");
-        setDescription("");
+        setTourDescription("");
         setSteps([fallbackStep]);
         setSelectedStep(fallbackStep.id);
       } finally {
@@ -103,6 +94,7 @@ const TourEditor = ({ isNew }) => {
   }, [tourId, isNew]);
 
   const updateStep = (id, changes) => {
+    if (!id) return;
     setSteps((prev) =>
       prev.map((step) => (step.id === id ? { ...step, ...changes } : step))
     );
@@ -114,7 +106,6 @@ const TourEditor = ({ isNew }) => {
       title: `Step ${steps.length + 1}`,
       description: "",
       image: null,
-      annotations: [],
     };
     setSteps([...steps, newStep]);
     setSelectedStep(newStep.id);
@@ -133,7 +124,16 @@ const TourEditor = ({ isNew }) => {
 
   const saveTour = async () => {
     try {
-      const cleanedSteps = steps.map((step) => ({ ...step }));
+      const cleanedSteps = steps.map((step) => {
+        const { id, ...rest } = step;
+        return { _id: id, ...rest };
+      });
+
+      console.log("Saving tour with:", {
+        title,
+        description: tourDescription,
+        steps: cleanedSteps,
+      });
 
       if (isNew) {
         const response = await instance.post(`/tours`, {
@@ -142,7 +142,7 @@ const TourEditor = ({ isNew }) => {
           steps: cleanedSteps,
         });
         alert("Tour created successfully!");
-        const newId = response.data.id || response.data._id;
+        const newId = response.data._id || response.data.id;
         navigate(`/editor/${newId}`);
       } else {
         await instance.put(`/tours/${tourId}`, {
@@ -158,11 +158,34 @@ const TourEditor = ({ isNew }) => {
     }
   };
 
-  const handleImageUpload = (event) => {
+  // --- NEW: Real file upload ---
+  const handleImageUpload = async (event) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      updateStep(selectedStep, { image: url });
+    if (file && selectedStep) {
+      try {
+        setUploading(true);
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        // Adjust this endpoint if needed
+        const response = await instance.post("/upload", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+
+        const uploadedUrl = response.data.url; // Your backend must return this URL
+
+        updateStep(selectedStep, { image: uploadedUrl });
+      } catch (error) {
+        console.error("File upload failed:", error);
+        alert("File upload failed. Please try again.");
+      } finally {
+        setUploading(false);
+        // Reset file input so same file can be uploaded again if needed
+        event.target.value = "";
+      }
     }
   };
 
@@ -171,17 +194,39 @@ const TourEditor = ({ isNew }) => {
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
       });
+
+      const chunks = [];
+
       const recorder = new MediaRecorder(stream);
 
       recorder.ondataavailable = (e) => {
-        setChunks((prev) => [...prev, e.data]);
+        chunks.push(e.data);
       };
 
-      recorder.onstop = () => {
+      recorder.onstop = async () => {
         const blob = new Blob(chunks, { type: "video/webm" });
-        const url = URL.createObjectURL(blob);
-        updateStep(selectedStep, { image: url });
-        setChunks([]);
+
+        // Upload the recorded video blob
+        try {
+          setUploading(true);
+          const formData = new FormData();
+          formData.append("file", blob, "recording.webm");
+
+          const response = await instance.post("/upload", formData, {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          });
+
+          const uploadedUrl = response.data.url;
+
+          updateStep(selectedStep, { image: uploadedUrl });
+        } catch (uploadError) {
+          console.error("Upload failed:", uploadError);
+          alert("Recording upload failed.");
+        } finally {
+          setUploading(false);
+        }
       };
 
       recorder.start();
@@ -193,7 +238,9 @@ const TourEditor = ({ isNew }) => {
   };
 
   const stopRecording = () => {
-    mediaRecorder?.stop();
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+    }
     setIsRecording(false);
   };
 
@@ -241,6 +288,8 @@ const TourEditor = ({ isNew }) => {
                 size="sm"
                 onClick={saveTour}
                 className="bg-green-600 text-white"
+                disabled={uploading}
+                title={uploading ? "Wait for upload to finish" : ""}
               >
                 <Save className="w-4 h-4 mr-2" />
                 {isNew ? "Create" : "Save"}
@@ -263,6 +312,7 @@ const TourEditor = ({ isNew }) => {
                   size="sm"
                   onClick={addStep}
                   className="bg-blue-600 hover:bg-blue-700"
+                  disabled={uploading}
                 >
                   <Plus className="w-4 h-4" />
                 </Button>
@@ -273,6 +323,7 @@ const TourEditor = ({ isNew }) => {
                   size="sm"
                   className="w-full"
                   onClick={toggleRecording}
+                  disabled={uploading}
                 >
                   <Video className="w-4 h-4 mr-2" />
                   {isRecording ? "Stop Recording" : "Start Recording"}
@@ -289,163 +340,102 @@ const TourEditor = ({ isNew }) => {
                   }`}
                   onClick={() => setSelectedStep(step.id)}
                 >
-                  <CardContent className="p-3">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded bg-blue-100 text-blue-600 flex items-center justify-center">
-                          {index + 1}
-                        </div>
-                        <span className="text-sm font-medium truncate">
-                          {step.title}
-                        </span>
-                      </div>
-                      {steps.length > 1 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteStep(step.id);
-                          }}
-                        >
-                          <X className="w-3 h-3" />
-                        </Button>
-                      )}
+                  <CardContent className="p-3 flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-sm">{step.title}</CardTitle>
+                      <p className="text-xs text-gray-600 truncate max-w-xs">
+                        {step.description || "No description"}
+                      </p>
                     </div>
-                    <div className="bg-gray-100 h-16 rounded mt-2 flex items-center justify-center">
-                      {step.image ? (
-                        step.image.endsWith(".webm") ? (
-                          <video
-                            src={step.image}
-                            controls
-                            className="h-full object-cover rounded"
-                          />
-                        ) : (
-                          <img
-                            src={step.image}
-                            alt="Step preview"
-                            className="h-full object-cover rounded"
-                          />
-                        )
-                      ) : (
-                        <Upload className="w-6 h-6 text-gray-400" />
-                      )}
-                    </div>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteStep(step.id);
+                      }}
+                      disabled={steps.length <= 1 || uploading}
+                      title={
+                        steps.length <= 1
+                          ? "At least one step required"
+                          : "Delete Step"
+                      }
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
                   </CardContent>
                 </Card>
               ))}
             </div>
           </div>
 
-          {/* Main Canvas */}
-          <div className="flex-1 flex flex-col bg-gray-100">
-            <div className="flex-1 p-6">
-              <Card className="h-full">
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>
-                      Step {steps.findIndex((s) => s.id === selectedStep) + 1}:{" "}
-                      {currentStep?.title}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        ref={fileInputRef}
-                        onChange={handleImageUpload}
-                        style={{ display: "none" }}
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          fileInputRef.current && fileInputRef.current.click()
-                        }
-                      >
-                        <Upload className="w-4 h-4 mr-2" />
-                        Upload Image
-                      </Button>
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex-1">
-                  <div className="h-96 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center relative">
-                    {currentStep?.image ? (
-                      currentStep.image.endsWith(".webm") ? (
-                        <video
-                          src={currentStep.image}
-                          controls
-                          className="max-h-full max-w-full object-contain rounded-lg"
-                        />
-                      ) : (
-                        <img
-                          src={currentStep.image}
-                          alt="Step content"
-                          className="max-h-full max-w-full object-contain rounded-lg"
-                        />
-                      )
-                    ) : (
-                      <div className="text-center">
-                        <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-600 mb-2">
-                          Upload a screenshot or image
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          Or use the screen recorder to capture your workflow
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* Right Sidebar - Properties */}
-          <div className="w-80 bg-white border-l border-gray-200 p-4">
-            <h3 className="font-semibold mb-4">Step Properties</h3>
-
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="step-title">Step Title</Label>
+          {/* Main Editor (RIGHT) */}
+          <div className="flex-1 p-6 overflow-y-auto">
+            {!currentStep ? (
+              <div>Select a step to edit</div>
+            ) : (
+              <>
                 <Input
-                  id="step-title"
-                  value={currentStep?.title || ""}
+                  placeholder="Step Title"
+                  value={currentStep.title}
                   onChange={(e) =>
-                    updateStep(selectedStep, { title: e.target.value })
+                    updateStep(currentStep.id, { title: e.target.value })
                   }
-                  placeholder="Enter step title"
+                  className="mb-4 text-lg"
                 />
-              </div>
-
-              <div>
-                <Label htmlFor="step-description">Description</Label>
                 <Textarea
-                  id="step-description"
-                  value={currentStep?.description || ""}
+                  placeholder="Step Description"
+                  value={currentStep.description}
                   onChange={(e) =>
-                    updateStep(selectedStep, { description: e.target.value })
+                    updateStep(currentStep.id, { description: e.target.value })
                   }
-                  placeholder="Describe what happens in this step"
-                  rows={3}
+                  className="mb-4 h-32"
                 />
-              </div>
 
-              <div>
-                <Label>Tour Settings</Label>
-                <div className="mt-2 space-y-3">
-                  <div>
-                    <Label htmlFor="tour-description">Tour Description</Label>
-                    <Textarea
-                      id="tour-description"
-                      value={tourDescription}
-                      onChange={(e) => setTourDescription(e.target.value)}
-                      placeholder="Describe your product demo"
-                      rows={2}
+                {/* Image Section */}
+                <div className="mb-4">
+                  {currentStep.image ? (
+                    <img
+                      src={currentStep.image}
+                      alt="Step"
+                      className="max-w-full max-h-64 object-contain"
                     />
-                  </div>
+                  ) : (
+                    <div className="border border-dashed border-gray-400 p-10 text-center text-gray-500">
+                      No image uploaded
+                    </div>
+                  )}
                 </div>
-              </div>
+
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  onChange={handleImageUpload}
+                  accept="image/*,video/*"
+                  disabled={uploading}
+                />
+                <Button
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="mb-4"
+                  disabled={uploading}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  {uploading ? "Uploading..." : "Upload Image/Video"}
+                </Button>
+              </>
+            )}
+
+            <div className="mt-8">
+              <Label>Tour Description</Label>
+              <Textarea
+                placeholder="Enter tour description"
+                value={tourDescription}
+                onChange={(e) => setTourDescription(e.target.value)}
+                className="mt-2"
+                rows={4}
+              />
             </div>
           </div>
         </div>
