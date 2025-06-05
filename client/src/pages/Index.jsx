@@ -18,8 +18,6 @@ const Index = () => {
   const token = localStorage.getItem("token");
   const isAuthenticated = !!token;
 
-  const tourId = "683c9d2bd56dc5e9fd449332";
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <Navigation />
