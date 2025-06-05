@@ -1,7 +1,7 @@
-import axios from "axios"; // Make sure this is here!
+import axios from "axios";
 
 const instance = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: process.env.VITE_BASE_URL + "/api",
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
