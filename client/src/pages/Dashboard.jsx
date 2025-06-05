@@ -15,7 +15,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchTours = async () => {
       try {
-        const res = await instance.get("/tour", { withCredentials: true });
+        const res = await instance.get("/tours", { withCredentials: true });
         setTours(res.data);
       } catch (error) {
         console.error(
@@ -160,7 +160,7 @@ const Dashboard = () => {
                     <span>{new Date(tour.createdAt).toLocaleDateString()}</span>
                   </div>
                   <div className="flex gap-2">
-                    <Link to={`/tour/${tour._id}`} className="flex-1">
+                    <Link to={`/tours/${tour._id}`} className="flex-1">
                       <Button variant="outline" size="sm" className="w-full">
                         <Play className="w-4 h-4 mr-2" /> Preview
                       </Button>

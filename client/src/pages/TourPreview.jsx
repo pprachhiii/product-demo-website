@@ -20,7 +20,7 @@ const TourPreview = () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await instance.get(`/tour/${id}`);
+      const res = await instance.get(`/tours/${id}`);
       const tourData = res.data;
       if (!tourData.steps || tourData.steps.length === 0) {
         setTour({ ...tourData, steps: [] });
@@ -42,6 +42,7 @@ const TourPreview = () => {
     fetchTour();
   }, [fetchTour]);
 
+  // Auto-play effect
   useEffect(() => {
     if (!isPlaying || !tour || !tour.steps || !tour.steps[currentStep]) return;
 
@@ -58,6 +59,7 @@ const TourPreview = () => {
     return () => clearTimeout(timer);
   }, [isPlaying, currentStep, tour]);
 
+  // Keyboard navigation
   useEffect(() => {
     const handleKey = (e) => {
       if (!tour || !tour.steps) return;
@@ -326,7 +328,7 @@ const TourPreview = () => {
                   <div className="flex gap-2">
                     <input
                       type="text"
-                      value={`${window.location.origin}/tour/${id}`}
+                      value={`${window.location.origin}/tours/${id}`}
                       readOnly
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm"
                     />
@@ -334,7 +336,7 @@ const TourPreview = () => {
                       size="sm"
                       onClick={() =>
                         navigator.clipboard.writeText(
-                          `${window.location.origin}/tour/${id}`
+                          `${window.location.origin}/tours/${id}`
                         )
                       }
                     >
@@ -357,7 +359,7 @@ const TourPreview = () => {
                           `https://twitter.com/intent/tweet?text=${encodeURIComponent(
                             "Check out this interactive tour!"
                           )}&url=${encodeURIComponent(
-                            `${window.location.origin}/tour/${id}`
+                            `${window.location.origin}/tours/${id}`
                           )}`,
                           "_blank"
                         )
@@ -373,7 +375,7 @@ const TourPreview = () => {
                       onClick={() =>
                         window.open(
                           `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
-                            `${window.location.origin}/tour/${id}`
+                            `${window.location.origin}/tours/${id}`
                           )}`,
                           "_blank"
                         )
@@ -389,7 +391,7 @@ const TourPreview = () => {
                       onClick={() =>
                         window.open(
                           `mailto:?subject=Check out this tour&body=${encodeURIComponent(
-                            `Here's a tour you might like: ${window.location.origin}/tour/${id}`
+                            `Here's a tour you might like: ${window.location.origin}/tours/${id}`
                           )}`
                         )
                       }

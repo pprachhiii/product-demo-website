@@ -46,15 +46,13 @@ exports.createTour = async (req, res) => {
   try {
     const { title, description, thumbnail, status, isPublic, steps } = req.body;
 
-    if (!title || !description) {
-      return res
-        .status(400)
-        .json({ msg: "Title and description are required" });
+    if (!title) {
+      return res.status(400).json({ msg: "Title is required" });
     }
 
-    // Sanitize steps - add _id if missing
+    // Sanitize steps - add id if missing
     const sanitizedSteps = (steps || []).map((step) => ({
-      _id: step._id ? step._id : new mongoose.Types.ObjectId(),
+      id: step.id ? step.id : new mongoose.Types.ObjectId(),
       ...step,
     }));
 
@@ -84,7 +82,7 @@ exports.updateTour = async (req, res) => {
     let sanitizedSteps;
     if (steps) {
       sanitizedSteps = steps.map((step) => ({
-        _id: step._id ? step._id : new mongoose.Types.ObjectId(),
+        id: step.id ? step.id : new mongoose.Types.ObjectId(),
         ...step,
       }));
     }

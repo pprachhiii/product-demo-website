@@ -24,27 +24,16 @@ function App() {
           }
         />
 
-        {/* Route to create a new tour */}
         <Route
           path="/editor"
           element={
             <ProtectedRoute>
-              <TourEditor isNew={true} />
+              <TourEditor />
             </ProtectedRoute>
           }
         />
 
-        {/* Route to edit an existing tour by ID */}
-        <Route
-          path="/editor/:id"
-          element={
-            <ProtectedRoute>
-              <TourEditor isNew={false} />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route path="/tour/:id" element={<TourPreview />} />
+        <Route path="/tours/:id" element={<TourPreview />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>

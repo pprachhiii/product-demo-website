@@ -18,7 +18,7 @@ const Index = () => {
   const token = localStorage.getItem("token");
   const isAuthenticated = !!token;
 
-  const tourId = "683c622134491c7bac969089";
+  const tourId = "683c9d2bd56dc5e9fd449332";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -54,7 +54,7 @@ const Index = () => {
             </Link>
 
             {/* Watch Demo button navigates to preview page */}
-            <Link to={`/tour/${tourId}`}>
+            <Link to={`/dashboard`}>
               <Button
                 variant="outline"
                 size="lg"
@@ -67,7 +67,7 @@ const Index = () => {
           </div>
 
           {/* Interactive Demo Preview clickable box */}
-          <Link to={`/tour/${tourId}`}>
+          <Link to={`/dashboard`}>
             <div className="bg-white rounded-2xl shadow-2xl p-8 border cursor-pointer max-w-4xl mx-auto animate-fade-in">
               <div className="bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl h-96 flex items-center justify-center">
                 <div className="text-center">
@@ -96,34 +96,39 @@ const Index = () => {
                 bg: "bg-blue-100",
                 title: "Visual Editor",
                 desc: "Intuitive drag-and-drop interface to create professional product tours with annotations and highlights.",
+                link: "/editor",
               },
               {
                 icon: <Share className="w-8 h-8 text-purple-600" />,
                 bg: "bg-purple-100",
                 title: "Easy Sharing",
                 desc: "Share your demos with unique links, embed them anywhere, or keep them private for internal use.",
+                link: "/dashboard",
               },
               {
                 icon: <Eye className="w-8 h-8 text-green-600" />,
                 bg: "bg-green-100",
                 title: "Analytics",
                 desc: "Track views, engagement, and conversion rates to optimize your product demonstrations.",
+                link: "/dashboard",
               },
-            ].map(({ icon, bg, title, desc }, idx) => (
-              <Card
-                key={idx}
-                className="hover:shadow-xl transition-all duration-300 hover:-translate-y-2"
-              >
-                <CardContent className="p-8 text-center">
-                  <div
-                    className={`${bg} w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6`}
-                  >
-                    {icon}
-                  </div>
-                  <h3 className="text-xl font-bold mb-4">{title}</h3>
-                  <p className="text-gray-600">{desc}</p>
-                </CardContent>
-              </Card>
+            ].map(({ icon, bg, title, desc, link }, idx) => (
+              <Link to={link} key={idx} className="block">
+                <Card
+                  key={idx}
+                  className="hover:shadow-xl transition-all duration-300 hover:-translate-y-2"
+                >
+                  <CardContent className="p-8 text-center">
+                    <div
+                      className={`${bg} w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6`}
+                    >
+                      {icon}
+                    </div>
+                    <h3 className="text-xl font-bold mb-4">{title}</h3>
+                    <p className="text-gray-600">{desc}</p>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         </div>
@@ -171,7 +176,7 @@ const Index = () => {
           </div>
 
           {/* Demo Preview Area clickable */}
-          <Link to={`/tour/${tourId}`}>
+          <Link to={`/dashboard`}>
             <div className="bg-white rounded-2xl p-8 shadow-xl cursor-pointer">
               <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl h-80 flex items-center justify-center">
                 <div className="text-center">

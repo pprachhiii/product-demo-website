@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,9 +11,12 @@ import { Save, Play, Plus, X, Upload, Video, Eye } from "lucide-react";
 import instance from "../utils/axios";
 
 const TourEditor = () => {
-  const { id } = useParams();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const id = searchParams.get("id");
   const isNew = !id;
   const navigate = useNavigate();
+
   const tourId = id || null;
 
   const [loading, setLoading] = useState(true);
@@ -56,7 +59,7 @@ const TourEditor = () => {
         if (stepData.length === 0) {
           stepData = [
             {
-              _id: Date.now().toString(),
+              id: Date.now().toString(),
               title: "Welcome Step",
               description: "Introduce users to your product",
               image: null,
@@ -65,7 +68,7 @@ const TourEditor = () => {
         }
 
         const normalizedSteps = stepData.map((step) => ({
-          id: step._id || step.id || Date.now().toString(),
+          id: step.id || Date.now().toString(),
           ...step,
         }));
 
@@ -126,13 +129,7 @@ const TourEditor = () => {
     try {
       const cleanedSteps = steps.map((step) => {
         const { id, ...rest } = step;
-        return { _id: id, ...rest };
-      });
-
-      console.log("Saving tour with:", {
-        title,
-        description: tourDescription,
-        steps: cleanedSteps,
+        return { id: id, ...rest };
       });
 
       if (isNew) {
@@ -142,8 +139,8 @@ const TourEditor = () => {
           steps: cleanedSteps,
         });
         alert("Tour created successfully!");
-        const newId = response.data._id || response.data.id;
-        navigate(`/editor/${newId}`);
+        const newId = response.data._id;
+        navigate(`/editor?id=${newId}`);
       } else {
         await instance.put(`/tours/${tourId}`, {
           title,
@@ -158,7 +155,7 @@ const TourEditor = () => {
     }
   };
 
-  // --- NEW: Real file upload ---
+  // --- Real file upload ---
   const handleImageUpload = async (event) => {
     const file = event.target.files?.[0];
     if (file && selectedStep) {
@@ -168,14 +165,13 @@ const TourEditor = () => {
         const formData = new FormData();
         formData.append("file", file);
 
-        // Adjust this endpoint if needed
-        const response = await instance.post("/upload", formData, {
+        const response = await instance.post("/tours/upload", formData, {
           headers: {
             "Content-Type": "multipart/form-data",
           },
         });
 
-        const uploadedUrl = response.data.url; // Your backend must return this URL
+        const uploadedUrl = response.data.url;
 
         updateStep(selectedStep, { image: uploadedUrl });
       } catch (error) {
@@ -183,7 +179,6 @@ const TourEditor = () => {
         alert("File upload failed. Please try again.");
       } finally {
         setUploading(false);
-        // Reset file input so same file can be uploaded again if needed
         event.target.value = "";
       }
     }
@@ -206,13 +201,12 @@ const TourEditor = () => {
       recorder.onstop = async () => {
         const blob = new Blob(chunks, { type: "video/webm" });
 
-        // Upload the recorded video blob
         try {
           setUploading(true);
           const formData = new FormData();
           formData.append("file", blob, "recording.webm");
 
-          const response = await instance.post("/upload", formData, {
+          const response = await instance.post("/tours/upload", formData, {
             headers: {
               "Content-Type": "multipart/form-data",
             },
@@ -275,7 +269,7 @@ const TourEditor = () => {
                 size="sm"
                 onClick={() => {
                   if (tourId) {
-                    navigate(`/preview/${tourId}`);
+                    navigate(`/preview?id=${tourId}`);
                   } else {
                     alert("Please save the tour before previewing");
                   }
@@ -332,7 +326,7 @@ const TourEditor = () => {
             </div>
 
             <div className="flex-1 overflow-y-auto p-4">
-              {steps.map((step, index) => (
+              {steps.map((step) => (
                 <Card
                   key={step.id}
                   className={`cursor-pointer mb-3 ${
@@ -369,73 +363,116 @@ const TourEditor = () => {
             </div>
           </div>
 
-          {/* Main Editor (RIGHT) */}
-          <div className="flex-1 p-6 overflow-y-auto">
-            {!currentStep ? (
-              <div>Select a step to edit</div>
-            ) : (
-              <>
+          {/* MIDDLE - Main Content */}
+          <div className="flex-1 flex flex-col bg-gray-100 rounded-lg shadow-sm mx-4">
+            <Card className="flex flex-col h-full">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>
+                    Step {steps.findIndex((s) => s.id === selectedStep) + 1}:{" "}
+                    {currentStep?.title}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Image
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+
+              <CardContent className="flex-1 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 rounded-b-lg border-t border-dashed border-gray-300 relative">
+                {currentStep?.image ? (
+                  <img
+                    src={currentStep.image}
+                    alt="Step content"
+                    className="max-h-full max-w-full object-contain rounded-lg"
+                  />
+                ) : (
+                  <div className="text-center text-gray-500">
+                    <Upload className="w-16 h-16 mx-auto mb-4" />
+                    <p className="text-lg mb-1">Upload a screenshot or video</p>
+                    <p className="text-sm">
+                      Or use the screen recorder to capture your workflow
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Hidden file input for uploads */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              onChange={handleImageUpload}
+              accept="image/*,video/*"
+              disabled={uploading}
+            />
+          </div>
+
+          {/* RIGHT Sidebar */}
+          <div className="w-80 bg-white border border-gray-200 rounded-lg p-6 overflow-y-auto">
+            <div>
+              <h5 className="font-semibold mb-2">Tour Settings</h5>
+              <div className="mt-4">
+                <Label
+                  htmlFor="step-title"
+                  className="block font-semibold mb-2"
+                >
+                  Step Title
+                </Label>
                 <Input
-                  placeholder="Step Title"
-                  value={currentStep.title}
+                  id="step-title"
+                  value={currentStep?.title || ""}
                   onChange={(e) =>
+                    currentStep &&
                     updateStep(currentStep.id, { title: e.target.value })
                   }
-                  className="mb-4 text-lg"
+                  disabled={uploading}
                 />
+              </div>
+
+              <div className="mt-4">
+                <Label
+                  htmlFor="step-description"
+                  className="block font-semibold mb-2"
+                >
+                  Step Description
+                </Label>
                 <Textarea
-                  placeholder="Step Description"
-                  value={currentStep.description}
+                  id="step-description"
+                  value={currentStep?.description || ""}
                   onChange={(e) =>
+                    currentStep &&
                     updateStep(currentStep.id, { description: e.target.value })
                   }
-                  className="mb-4 h-32"
-                />
-
-                {/* Image Section */}
-                <div className="mb-4">
-                  {currentStep.image ? (
-                    <img
-                      src={currentStep.image}
-                      alt="Step"
-                      className="max-w-full max-h-64 object-contain"
-                    />
-                  ) : (
-                    <div className="border border-dashed border-gray-400 p-10 text-center text-gray-500">
-                      No image uploaded
-                    </div>
-                  )}
-                </div>
-
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  className="hidden"
-                  onChange={handleImageUpload}
-                  accept="image/*,video/*"
                   disabled={uploading}
+                  rows={3}
                 />
-                <Button
-                  size="sm"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="mb-4"
-                  disabled={uploading}
+              </div>
+            </div>
+
+            <div>
+              <h5 className="font-semibold mb-2">Tour Settings</h5>
+              <div className="mt-4">
+                <Label
+                  htmlFor="tour-description"
+                  className="block font-semibold mb-2"
                 >
-                  <Upload className="w-4 h-4 mr-2" />
-                  {uploading ? "Uploading..." : "Upload Image/Video"}
-                </Button>
-              </>
-            )}
-
-            <div className="mt-8">
-              <Label>Tour Description</Label>
-              <Textarea
-                placeholder="Enter tour description"
-                value={tourDescription}
-                onChange={(e) => setTourDescription(e.target.value)}
-                className="mt-2"
-                rows={4}
-              />
+                  Tour Description
+                </Label>
+                <Textarea
+                  id="tour-description"
+                  value={tourDescription}
+                  onChange={(e) => setTourDescription(e.target.value)}
+                  disabled={uploading}
+                  rows={3}
+                />
+              </div>
             </div>
           </div>
         </div>

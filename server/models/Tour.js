@@ -11,7 +11,6 @@ const TourSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   steps: [
     {
-      id: { type: mongoose.Schema.Types.ObjectId, auto: true },
       title: String,
       description: String,
       image: String,
